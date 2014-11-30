@@ -1,0 +1,159 @@
+<!doctype html>
+<html>
+	<head>
+		
+		<script src="../promise-6.0.0.min.js"></script>
+		<script src="../jsfeat/build/jsfeat.js"></script>
+		<script src="dat.gui.min.js"></script>
+		<script src="squareFeatures.js"></script>
+		<script src="squareDetect.js"></script>
+		<script src="squareMatch.js"></script>
+		<script>
+
+			window.addEventListener('load',function(){
+				var tcanvas = document.createElement('canvas');
+				tcanvas.width = 640*2;
+				tcanvas.height = 360*2;
+				var ctx = tcanvas.getContext('2d');
+				var img = document.getElementById('testImg');
+				ctx.drawImage(img, 0,0,tcanvas.width,tcanvas.height);
+				var imageData = ctx.getImageData(0,0,tcanvas.width,tcanvas.height);
+				var randomPts = [];
+				for (var i = 0; i < 3000; i++) {
+					randomPts[i] = {
+						x:Math.floor(Math.random()*tcanvas.width),
+						y:Math.floor(Math.random()*tcanvas.height)
+					};
+				};
+
+				//do dat gui stuff?
+				
+				var dcanvas = document.getElementById('drawCanvas');
+				dcanvas.width = tcanvas.width;
+				dcanvas.height = tcanvas.height;
+				var dctx = dcanvas.getContext('2d');
+
+				var params = {
+					thresh:15
+				}
+				var gui = new dat.GUI();
+				gui.add(params,'thresh').min(0).max(255).onChange(redraw);
+
+				function redraw(){
+					dctx.drawImage(img, 0,0,tcanvas.width,tcanvas.height);
+					/*var newImageData = ctx.getImageData(0,0,tcanvas.width,tcanvas.height);
+					for (var x = 0; x < newImageData.width; x++) {
+						for (var y = 0; y < newImageData.height; y++) {
+							var coords = getImageCoord(x,y,newImageData);
+							var val = getMedianImagePixelIntensity(x,y,imageData);
+							newImageData.data[coords] = val/3;
+							newImageData.data[coords+1] = val/3;
+							newImageData.data[coords+2] = val/3;
+							newImageData.data[coords+3] = 255;
+						};
+					};
+					dctx.putImageData(newImageData,0,0);*/
+
+					function createBinaryString (nMask) {
+					  // nMask must be between -2147483648 and 2147483647
+					  for (var nFlag = 0, nShifted = nMask, sMask = ""; nFlag < 32;
+					       nFlag++, sMask += String(nShifted >>> 31), nShifted <<= 1);
+					  return sMask;
+					}
+
+					/*console.log('finding');
+					var foundCt = 0;
+					for (var i = 0; i < randomPts.length; i++) {
+						var foundSquare = findSquare(randomPts[i],imageData,params.thresh,dctx);
+						
+						if(foundSquare && 
+							!(	   foundSquare.center.x - foundSquare.size < 1
+								|| foundSquare.center.y - foundSquare.size < 1
+								|| foundSquare.center.x + foundSquare.size > imageData.width-2
+								|| foundSquare.center.y + foundSquare.size > imageData.height-2)){
+
+							foundCt++;
+							dctx.fillStyle='blue';
+							dctx.fillRect(foundSquare.center.x - foundSquare.size -1, foundSquare.center.y - foundSquare.size -1, 2, 2);
+							dctx.fillRect(foundSquare.center.x  -1, 				  foundSquare.center.y - foundSquare.size -1, 2, 2);
+							dctx.fillRect(foundSquare.center.x + foundSquare.size -1, foundSquare.center.y - foundSquare.size -1, 2, 2);
+							dctx.fillRect(foundSquare.center.x - foundSquare.size -1, foundSquare.center.y  				  -1, 2, 2);
+							dctx.fillRect(foundSquare.center.x + foundSquare.size -1, foundSquare.center.y  				  -1, 2, 2);
+							dctx.fillRect(foundSquare.center.x - foundSquare.size -1, foundSquare.center.y + foundSquare.size -1, 2, 2);
+							dctx.fillRect(foundSquare.center.x  -1, 				  foundSquare.center.y + foundSquare.size -1, 2, 2);
+							dctx.fillRect(foundSquare.center.x + foundSquare.size -1, foundSquare.center.y + foundSquare.size -1, 2, 2);
+							dctx.fillStyle='green';
+							dctx.fillRect(foundSquare.center.x  -2, 				  foundSquare.center.y  				  -2, 4, 4);
+							
+							var vector = scoreSquare(foundSquare,imageData,10);
+							console.log('Found square with vector ',createBinaryString(vector[1])+createBinaryString(vector[0]),', which is ',vector);
+						} 
+						//if(foundCt>0) break;
+					};
+					console.log('Found ',foundCt,' points');
+					*/
+					transformInfo = getTransformation(imageData);
+					console.log(transformInfo);
+					var tf = transformInfo[0];
+					var sq = transformInfo[1];
+					var froms = transformInfo[2];
+					var tos = transformInfo[3];
+					for (var i = 0; i < sq.length; i++) {
+						var foundSquare = sq[i];
+						dctx.fillStyle='blue';
+						dctx.fillRect(foundSquare.center.x - foundSquare.size -1, foundSquare.center.y - foundSquare.size -1, 2, 2);
+						dctx.fillRect(foundSquare.center.x  -1, 				  foundSquare.center.y - foundSquare.size -1, 2, 2);
+						dctx.fillRect(foundSquare.center.x + foundSquare.size -1, foundSquare.center.y - foundSquare.size -1, 2, 2);
+						dctx.fillRect(foundSquare.center.x - foundSquare.size -1, foundSquare.center.y  				  -1, 2, 2);
+						dctx.fillRect(foundSquare.center.x + foundSquare.size -1, foundSquare.center.y  				  -1, 2, 2);
+						dctx.fillRect(foundSquare.center.x - foundSquare.size -1, foundSquare.center.y + foundSquare.size -1, 2, 2);
+						dctx.fillRect(foundSquare.center.x  -1, 				  foundSquare.center.y + foundSquare.size -1, 2, 2);
+						dctx.fillRect(foundSquare.center.x + foundSquare.size -1, foundSquare.center.y + foundSquare.size -1, 2, 2);
+						dctx.fillStyle='green';
+						dctx.fillRect(foundSquare.center.x  -2, 				  foundSquare.center.y  				  -2, 4, 4);
+						
+
+						var mappedFrom = applyTransformation(tf,froms[i]);
+						dctx.strokeStyle = 'orange';
+						dctx.lineWidth = 1;
+						dctx.beginPath();
+						dctx.moveTo(tos[i].x,tos[i].y);
+						dctx.lineTo(mappedFrom.x,mappedFrom.y);
+						dctx.stroke();
+					};
+
+					function strokeRectPersp(x,y,w,h){
+						var c1 = applyTransformation(tf,{x:x-.5,y:y-.5});
+						var c2 = applyTransformation(tf,{x:x-.5,y:y+h-.5});
+						var c3 = applyTransformation(tf,{x:x+w-.5,y:y+h-.5});
+						var c4 = applyTransformation(tf,{x:x+w-.5,y:y-.5});
+						dctx.beginPath();
+						dctx.moveTo(c1.x,c1.y);
+						dctx.lineTo(c2.x,c2.y);
+						dctx.lineTo(c3.x,c3.y);
+						dctx.lineTo(c4.x,c4.y);
+						dctx.closePath();
+						dctx.stroke();
+					}
+					
+					dctx.strokeStyle = 'purple';
+					dctx.lineWidth = 1;
+					for (var x = 0; x < 52; x++) {
+						for (var y = 0; y < 34; y++) {
+							strokeRectPersp(x,y,1,1);
+						};
+					};
+					dctx.strokeStyle = 'green';
+					dctx.lineWidth = 2;
+					strokeRectPersp(0,0,52,34);
+				}
+				redraw();
+
+				
+			})
+		</script>
+	<body>
+		<canvas id="drawCanvas"></canvas>
+		<img id="testImg" src="test2.jpg">
+	</body>
+</html>
