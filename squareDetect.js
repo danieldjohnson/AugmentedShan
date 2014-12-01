@@ -26,7 +26,12 @@ function getMedianImagePixelIntensity(x,y,imageData){
 }
 
 
-var SPAN_LEFT = 0, SPAN_RIGHT = 1, SPAN_UP = 2, SPAN_DOWN=3;
+var spanDirs = {
+	LEFT: 0,
+	RIGHT: 1,
+	UP: 2,
+	DOWN: 3
+};
 function castTestPoints(point,imageData,thresh, maxLen){
 	var px = point.x,
 		py = point.y,
@@ -101,10 +106,10 @@ function castTestPoints(point,imageData,thresh, maxLen){
 function drawSpans(point,spans,drawCtx,color){
 	drawCtx.strokeStyle = color;
 	drawCtx.beginPath();
-	drawCtx.moveTo(point.x - spans[SPAN_LEFT], point.y);
-	drawCtx.lineTo(point.x + spans[SPAN_RIGHT], point.y);
-	drawCtx.moveTo(point.x, point.y - spans[SPAN_UP]);
-	drawCtx.lineTo(point.x, point.y + spans[SPAN_DOWN]);
+	drawCtx.moveTo(point.x - spans[spanDirs.LEFT], point.y);
+	drawCtx.lineTo(point.x + spans[spanDirs.RIGHT], point.y);
+	drawCtx.moveTo(point.x, point.y - spans[spanDirs.UP]);
+	drawCtx.lineTo(point.x, point.y + spans[spanDirs.DOWN]);
 	drawCtx.stroke();
 }
 function findSquare(point,imageData,thresh){
@@ -113,15 +118,15 @@ function findSquare(point,imageData,thresh){
 
 	//Estimate actual center of square based on spans
 	var newCenter = {
-		x: Math.round(point.x + (origSpans[SPAN_RIGHT] - origSpans[SPAN_LEFT])/2),
-		y: Math.round(point.y + (origSpans[SPAN_DOWN] - origSpans[SPAN_UP])/2),
+		x: Math.round(point.x + (origSpans[spanDirs.RIGHT] - origSpans[spanDirs.LEFT])/2),
+		y: Math.round(point.y + (origSpans[spanDirs.DOWN] - origSpans[spanDirs.UP])/2),
 	};
 	var centerSpans = castTestPoints(newCenter,imageData,thresh,20);
 	var avgSpan = (centerSpans[0] + centerSpans[1] + centerSpans[2] + centerSpans[3])/4;
 
 
 	//Check if spans indicate this is in central 9th of square
-	if(Math.abs(centerSpans[SPAN_LEFT] + centerSpans[SPAN_RIGHT] - centerSpans[SPAN_UP] - centerSpans[SPAN_DOWN]) > avgSpan){
+	if(Math.abs(centerSpans[spanDirs.LEFT] + centerSpans[spanDirs.RIGHT] - centerSpans[spanDirs.UP] - centerSpans[spanDirs.DOWN]) > avgSpan){
 		//drawSpans(newCenter,centerSpans,drawCtx,'red');
 		return null;
 	}

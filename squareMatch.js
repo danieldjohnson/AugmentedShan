@@ -83,11 +83,11 @@ function matchLists(squares,imageData,scoreDiffThresh,maxGoodDist){
 var ransac = jsfeat.motion_estimator.ransac;
 var homo_kernel = new jsfeat.motion_model.homography2d();
 var transform = new jsfeat.matrix_t(3, 3, jsfeat.F32_t | jsfeat.C1_t);
-function doRansac(from,to){
+function doRansac(from,to, modelSize){
 
 	var count = from.length;
 	var mask = new jsfeat.matrix_t(count, 1, jsfeat.U8_t | jsfeat.C1_t);
-	var model_size = 10; // minimum points to estimate motion
+	var model_size = modelSize || 3; // minimum points to estimate motion
 	var thresh = 3; // max error to classify as inlier
 	var eps = 0.5; // max outliers ratio
 	var prob = 0.99; // probability of success
@@ -143,8 +143,8 @@ function getTransformation(imageData){
 				var idx = squares.length;
 				squares[idx] = foundSquare;
 				from[idx] = {
-					x: match[0][0],
-					y: match[0][1]
+					x: match[0][0]+0.5,
+					y: match[0][1]+0.5
 				};
 				to[idx] = foundSquare.center;
 			}
@@ -152,7 +152,7 @@ function getTransformation(imageData){
 		attempts++;
 	}
 	console.log(squares, from, to);
-	var tf = doRansac(from,to);
+	var tf = doRansac(from,to,3);
 	return [tf,squares,from,to];
 }
 function applyTransformation(M,pt){

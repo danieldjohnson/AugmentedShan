@@ -33,21 +33,7 @@ function Webcam(width, height){
 Webcam.prototype.start = function(){
 	var self=this;
 	return new Promise(function(resolve, reject){
-		MediaStreamTrack.getSources(function(sourceInfos) {
-			var videoSource = null;
-			for (var i = 0; i != sourceInfos.length; ++i) {
-				var sourceInfo = sourceInfos[i];
-				console.log(sourceInfo);
-				if (sourceInfo.kind === 'video') {
-					console.log(sourceInfo.id, sourceInfo.label || 'camera');
-					if(videoSource == null || sourceInfo.facing == 'environment')
-						videoSource = sourceInfo.id;
-				} else {
-					console.log('Some other kind of source: ', sourceInfo);
-				}
-			}
-			self.constraints.video.mandatory.sourceId = videoSource;
-
+		function goGetUserMedia(){
 			compatibility.getUserMedia(self.constraints, function(localMediaStream) {
 				self.stream = localMediaStream;
 				self.video.src = window.URL.createObjectURL(localMediaStream);
@@ -57,7 +43,28 @@ Webcam.prototype.start = function(){
 				// See crbug.com/110938.
 				//video.onloadedmetadata = resolve;
 			}, reject);
-		});
+		}
+		if(MediaStreamTrack && MediaStreamTrack.getSources){
+			MediaStreamTrack.getSources(function(sourceInfos) {
+				var videoSource = null;
+				for (var i = 0; i != sourceInfos.length; ++i) {
+					var sourceInfo = sourceInfos[i];
+					console.log(sourceInfo);
+					if (sourceInfo.kind === 'video') {
+						console.log(sourceInfo.id, sourceInfo.label || 'camera');
+						if(videoSource == null || sourceInfo.facing == 'environment')
+							videoSource = sourceInfo.id;
+					} else {
+						console.log('Some other kind of source: ', sourceInfo);
+					}
+				}
+				self.constraints.video.mandatory.sourceId = videoSource;
+				goGetUserMedia();
+			});
+		} else {
+			goGetUserMedia();
+		}
+		
 	});
 }
 Webcam.prototype.isReady = function(){
