@@ -12,6 +12,9 @@ function Webcam(width, height){
 	height = Math.floor(height);
 	console.log("Scaling", a, desiredA, factor, width, height);
 
+	this.width = width;
+	this.height = height;
+
 	this.video = document.createElement('video'); //document.getElementById('streamVideo');
 	this.video.autoplay = true;
 	this.video.width = width;
@@ -72,7 +75,12 @@ Webcam.prototype.isReady = function(){
 }
 Webcam.prototype.getImageData = function(){
 	if(this.stream){
-		this.ctx.drawImage(this.video, 0, 0,this.canvas.width, this.canvas.height);
-		return this.ctx.getImageData(0,0,this.canvas.width, this.canvas.height);
-	}
+		try{
+			this.ctx.drawImage(this.video, 0, 0,this.canvas.width, this.canvas.height);
+			return this.ctx.getImageData(0,0,this.canvas.width, this.canvas.height);
+		}catch(e){
+			console.error(e);
+			return null;
+		}
+	}else return null;
 }

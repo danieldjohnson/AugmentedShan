@@ -1,28 +1,27 @@
-var homo_kernel = new jsfeat.motion_model.homography2d();
-var homo_transform = new jsfeat.matrix_t(3, 3, jsfeat.F32_t | jsfeat.C1_t);
-function updateTransform(imageData,lastTransform, ctx){
+WindowFinder = {};
+WindowFinder.updateTransformWithWindows = function(imageData,lastTransform, ransacCalc){
 	var MIN_CORNERS_NEEDED = 8;
 
-	var foundCorners = findCorners(imageData,lastTransform,ctx);
+	var foundCorners = WindowFinder.findCorners(imageData,lastTransform);
 	if(foundCorners.length < MIN_CORNERS_NEEDED){
 		return null;
 	}else{
-		homo_kernel.run(foundCorners.from, foundCorners.to, homo_transform, foundCorners.length);
-		return homo_transform.buffer.f32;
+		var ransacResult = ransacCalc.doRansac(foundCorners.from,foundCorners.to,MIN_CORNERS_NEEDED);
+		return ransacResult.matrix;
 	}
 }
 
-var cornerDirs = {
+WindowFinder.cornerDirs = {
 	LEFT:-1,
 	RIGHT:1,
 	UP:-1,
 	DOWN:1
 };
-function findCorners(imageData,lastTransform,ctx){
-	var LEFT = cornerDirs.LEFT,
-		RIGHT = cornerDirs.RIGHT,
-		UP = cornerDirs.UP,
-		DOWN = cornerDirs.DOWN;
+WindowFinder.findCorners = function(imageData,lastTransform){
+	var LEFT = WindowFinder.cornerDirs.LEFT,
+		RIGHT = WindowFinder.cornerDirs.RIGHT,
+		UP = WindowFinder.cornerDirs.UP,
+		DOWN = WindowFinder.cornerDirs.DOWN;
 	var cornerPositions = [
 		[{x:16,y:7},RIGHT,DOWN],
 		[{x:26,y:7},LEFT,DOWN],
@@ -49,17 +48,16 @@ function findCorners(imageData,lastTransform,ctx){
 		to = [];
 	for (var i = 0; i < cornerPositions.length; i++) {
 		var curPos = cornerPositions[i];
-		var found = findWindowCorner(imageData,lastTransform,curPos[0],curPos[1],curPos[2],ctx);
+		var found = WindowFinder.findWindowCorner(imageData,lastTransform,curPos[0],curPos[1],curPos[2]);
 		if(found){
-			//Corners are slightly inside the desired location, so change from pts accordingly
 			from.push({
-				x:curPos[0].x + curPos[1]*0.1,
-				y:curPos[0].y + curPos[2]*0.1,
+				x:curPos[0].x,
+				y:curPos[0].y,
 			});
 			to.push(found);
 
-			ctx.fillStyle = 'green';
-			ctx.fillRect(found.x-1,found.y-1,2,2);
+			/*ctx.fillStyle = 'green';
+			ctx.fillRect(found.x-1,found.y-1,2,2);*/
 		}
 	};
 	return {
@@ -68,59 +66,59 @@ function findCorners(imageData,lastTransform,ctx){
 		length:from.length
 	};
 }
-function findWindowCorner(imageData, transform, pt, xDir, yDir, ctx){
-	var MAX_SWEEP_DIST = 20;
+WindowFinder.findWindowCorner = function(imageData, transform, pt, xDir, yDir, ctx){
+	var MAX_SWEEP_DIST = 16;
 
-	var testPt = applyTransformation(transform,{
+	var testPt = SquareMatch.applyTransformation(transform,{
 		x: pt.x + 0.5*xDir,
 		y: pt.y - 0.7*yDir
 	});
-	var xPt1 = sweepFindWindowEdge(imageData,testPt,0,yDir,MAX_SWEEP_DIST);
-	ctx.fillStyle = 'red';
+	var xPt1 = WindowFinder.sweepFindWindowEdge(imageData,testPt,0,yDir,MAX_SWEEP_DIST);
+	/*ctx.fillStyle = 'red';
 	ctx.fillRect(testPt.x-1,testPt.y,2,2);
 	ctx.fillStyle = 'orange';
-	if(xPt1) ctx.fillRect(xPt1.x-1,xPt1.y,2,2);
+	if(xPt1) ctx.fillRect(xPt1.x-1,xPt1.y,2,2);*/
 
 
-	testPt = applyTransformation(transform,{
+	testPt = SquareMatch.applyTransformation(transform,{
 		x: pt.x + 3.5*xDir,
 		y: pt.y - 0.7*yDir
 	});
-	var xPt2 = sweepFindWindowEdge(imageData,testPt,0,yDir,MAX_SWEEP_DIST);
-	ctx.fillStyle = 'red';
+	var xPt2 = WindowFinder.sweepFindWindowEdge(imageData,testPt,0,yDir,MAX_SWEEP_DIST);
+	/*ctx.fillStyle = 'red';
 	ctx.fillRect(testPt.x-1,testPt.y,2,2);
 	ctx.fillStyle = 'orange';
-	if(xPt2) ctx.fillRect(xPt2.x-1,xPt2.y,2,2);
+	if(xPt2) ctx.fillRect(xPt2.x-1,xPt2.y,2,2);*/
 
 
-	testPt = applyTransformation(transform,{
+	testPt = SquareMatch.applyTransformation(transform,{
 		x: pt.x - 0.7*xDir,
 		y: pt.y + 0.5*yDir
 	});
-	var yPt1 = sweepFindWindowEdge(imageData,testPt,xDir,0,MAX_SWEEP_DIST);
-	ctx.fillStyle = 'red';
+	var yPt1 = WindowFinder.sweepFindWindowEdge(imageData,testPt,xDir,0,MAX_SWEEP_DIST);
+	/*ctx.fillStyle = 'red';
 	ctx.fillRect(testPt.x-1,testPt.y,2,2);
 	ctx.fillStyle = 'orange';
-	if(yPt1) ctx.fillRect(yPt1.x-1,yPt1.y,2,2);
+	if(yPt1) ctx.fillRect(yPt1.x-1,yPt1.y,2,2);*/
 
 
-	testPt = applyTransformation(transform,{
+	testPt = SquareMatch.applyTransformation(transform,{
 		x: pt.x - 0.7*xDir,
 		y: pt.y + 3.5*yDir
 	});
-	var yPt2 = sweepFindWindowEdge(imageData,testPt,xDir,0,MAX_SWEEP_DIST);
-	ctx.fillStyle = 'red';
+	var yPt2 = WindowFinder.sweepFindWindowEdge(imageData,testPt,xDir,0,MAX_SWEEP_DIST);
+	/*ctx.fillStyle = 'red';
 	ctx.fillRect(testPt.x-1,testPt.y,2,2);
 	ctx.fillStyle = 'orange';
-	if(yPt2) ctx.fillRect(yPt2.x-1,yPt2.y,2,2);
+	if(yPt2) ctx.fillRect(yPt2.x-1,yPt2.y,2,2);*/
 
 
 	if(xPt1==null || xPt2==null || yPt1==null || yPt2==null) return null;
 
-	var intersect = lineLineIntersect(xPt1,xPt2,yPt1,yPt2);
+	var intersect = WindowFinder.lineLineIntersect(xPt1,xPt2,yPt1,yPt2);
 	return intersect;
 }
-function sweepFindWindowEdge(imageData,pt,dx,dy,maxDist) {
+WindowFinder.sweepFindWindowEdge = function(imageData,pt,dx,dy,maxDist) {
 	// Finds the window edge by sweeping through the imageData until it hits a pixel
 	// of intensity 1/2 of the original
 	var x = Math.round(pt.x);
@@ -128,7 +126,7 @@ function sweepFindWindowEdge(imageData,pt,dx,dy,maxDist) {
 
 	if(x < 0 || x >= imageData.width || y < 0 || y >= imageData.height) return null;
 
-	var startIntensity = getImagePixelIntensity(x,y,imageData);
+	var startIntensity = SquareDetect.getImagePixelIntensity(x,y,imageData);
 	var dist = 0;
 	while(true){
 		x += dx;
@@ -137,7 +135,7 @@ function sweepFindWindowEdge(imageData,pt,dx,dy,maxDist) {
 		if(x < 0 || x >= imageData.width || y < 0 || y >= imageData.height || dist>maxDist){
 			return null;
 		}else{
-			var newIntensity = getImagePixelIntensity(x,y,imageData);
+			var newIntensity = SquareDetect.getImagePixelIntensity(x,y,imageData);
 			if(newIntensity < startIntensity*.6){
 				return {
 					x:x,
@@ -148,7 +146,7 @@ function sweepFindWindowEdge(imageData,pt,dx,dy,maxDist) {
 	}
 }
 
-function lineLineIntersect(s1,e1,s2,e2){
+WindowFinder.lineLineIntersect = function(s1,e1,s2,e2){
     var A1 = e1.y-s1.y,
         B1 = s1.x-e1.x,
         C1 = A1*s1.x + B1*s1.y,

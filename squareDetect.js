@@ -1,24 +1,25 @@
-function getImageCoord(x,y,imageData){
+SquareDetect = {};
+SquareDetect.getImageCoord = function(x,y,imageData){
 	return (x*4 + y*imageData.width*4);
 }
-function getImagePixel(x,y,imageData){
-	var coord = getImageCoord(x,y,imageData);
+SquareDetect.getImagePixel = function(x,y,imageData){
+	var coord = SquareDetect.getImageCoord(x,y,imageData);
 	return [imageData.data[coord], 
 			imageData.data[coord+1], 
 			imageData.data[coord+2], 
 			imageData.data[coord+3]];
 }
-function getImagePixelIntensity(x,y,imageData){
-	var coord = getImageCoord(x,y,imageData);
+SquareDetect.getImagePixelIntensity = function(x,y,imageData){
+	var coord = SquareDetect.getImageCoord(x,y,imageData);
 	return (0.0+imageData.data[coord]+ 
 			imageData.data[coord+1]+ 
 			imageData.data[coord+2]);
 }
-function getMedianImagePixelIntensity(x,y,imageData){
+SquareDetect.getMedianImagePixelIntensity = function(x,y,imageData){
 	var intensities = [];
 	for (var i = 0; i < 3; i++) {
 		for (var j = 0; j < 3; j++) {
-			intensities[3*i + j] = getImagePixelIntensity(x+i-1, y+j-1, imageData);
+			intensities[3*i + j] = SquareDetect.getImagePixelIntensity(x+i-1, y+j-1, imageData);
 		};
 	};
 	intensities.sort( function(a,b) {return a - b;} );
@@ -26,22 +27,22 @@ function getMedianImagePixelIntensity(x,y,imageData){
 }
 
 
-var spanDirs = {
+SquareDetect.spanDirs = {
 	LEFT: 0,
 	RIGHT: 1,
 	UP: 2,
 	DOWN: 3
 };
-function castTestPoints(point,imageData,thresh, maxLen){
+SquareDetect.castTestPoints = function(point,imageData,thresh, maxLen){
 	var px = point.x,
 		py = point.y,
-		pval = getImagePixelIntensity(px,py,imageData);
+		pval = SquareDetect.getImagePixelIntensity(px,py,imageData);
 	var x,y,val;
 
 	x=px-1; y=py; lastval=pval;
 	var lspan = 0;
 	while(x>=0){
-		var nval = getImagePixelIntensity(x,y,imageData);
+		var nval = SquareDetect.getImagePixelIntensity(x,y,imageData);
 		if(Math.abs(nval - pval) > thresh){
 			break;
 		}
@@ -57,7 +58,7 @@ function castTestPoints(point,imageData,thresh, maxLen){
 	x=px+1; y=py; lastval=pval;
 	var rspan = 0;
 	while(x<imageData.width){
-		var nval = getImagePixelIntensity(x,y,imageData);
+		var nval = SquareDetect.getImagePixelIntensity(x,y,imageData);
 		if(Math.abs(nval - pval) > thresh){
 			break;
 		}
@@ -73,7 +74,7 @@ function castTestPoints(point,imageData,thresh, maxLen){
 	x=px; y=py-1; lastval=pval;
 	var uspan = 0;
 	while(y>=0){
-		var nval = getImagePixelIntensity(x,y,imageData);
+		var nval = SquareDetect.getImagePixelIntensity(x,y,imageData);
 		if(Math.abs(nval - pval) > thresh){
 			break;
 		}
@@ -89,7 +90,7 @@ function castTestPoints(point,imageData,thresh, maxLen){
 	x=px; y=py+1; lastval=pval;
 	var dspan = 0;
 	while(y<imageData.height){
-		var nval = getImagePixelIntensity(x,y,imageData);
+		var nval = SquareDetect.getImagePixelIntensity(x,y,imageData);
 		if(Math.abs(nval - pval) > thresh){
 			break;
 		}
@@ -103,7 +104,7 @@ function castTestPoints(point,imageData,thresh, maxLen){
 	}
 	return [lspan,rspan,uspan,dspan];
 }
-function drawSpans(point,spans,drawCtx,color){
+SquareDetect.drawSpans = function(point,spans,drawCtx,color){
 	drawCtx.strokeStyle = color;
 	drawCtx.beginPath();
 	drawCtx.moveTo(point.x - spans[spanDirs.LEFT], point.y);
@@ -112,8 +113,9 @@ function drawSpans(point,spans,drawCtx,color){
 	drawCtx.lineTo(point.x, point.y + spans[spanDirs.DOWN]);
 	drawCtx.stroke();
 }
-function findSquare(point,imageData,thresh){
-	var origSpans = castTestPoints(point,imageData,thresh,20);
+SquareDetect.findSquare = function(point,imageData,thresh){
+	var spanDirs = SquareDetect.spanDirs;
+	var origSpans = SquareDetect.castTestPoints(point,imageData,thresh,20);
 	//drawSpans(point,origSpans,drawCtx,'blue');
 
 	//Estimate actual center of square based on spans
@@ -121,7 +123,7 @@ function findSquare(point,imageData,thresh){
 		x: Math.round(point.x + (origSpans[spanDirs.RIGHT] - origSpans[spanDirs.LEFT])/2),
 		y: Math.round(point.y + (origSpans[spanDirs.DOWN] - origSpans[spanDirs.UP])/2),
 	};
-	var centerSpans = castTestPoints(newCenter,imageData,thresh,20);
+	var centerSpans = SquareDetect.castTestPoints(newCenter,imageData,thresh,20);
 	var avgSpan = (centerSpans[0] + centerSpans[1] + centerSpans[2] + centerSpans[3])/4;
 
 

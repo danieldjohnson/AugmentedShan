@@ -92,6 +92,7 @@
 					};
 					console.log('Found ',foundCt,' points');
 					*/
+				
 					transformInfo = getTransformation(imageData);
 					console.log(transformInfo);
 					var tf = transformInfo[0];
@@ -123,10 +124,10 @@
 					};
 
 					function strokeRectPersp(x,y,w,h){
-						var c1 = applyTransformation(tf,{x:x-.5,y:y-.5});
-						var c2 = applyTransformation(tf,{x:x-.5,y:y+h-.5});
-						var c3 = applyTransformation(tf,{x:x+w-.5,y:y+h-.5});
-						var c4 = applyTransformation(tf,{x:x+w-.5,y:y-.5});
+						var c1 = applyTransformation(tf,{x:x,y:y});
+						var c2 = applyTransformation(tf,{x:x,y:y+h});
+						var c3 = applyTransformation(tf,{x:x+w,y:y+h});
+						var c4 = applyTransformation(tf,{x:x+w,y:y});
 						dctx.beginPath();
 						dctx.moveTo(c1.x,c1.y);
 						dctx.lineTo(c2.x,c2.y);
@@ -154,6 +155,6 @@
 		</script>
 	<body>
 		<canvas id="drawCanvas"></canvas>
-		<img id="testImg" src="test2.jpg">
+		<img id="testImg" src="diff2.jpg">
 	</body>
 </html>
