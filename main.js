@@ -1,6 +1,7 @@
 var cam, squareMatcher, flowTracker,ransacCalc;
 var delayCanvas;
 var renderer;
+var sgClient;
 
 var trainCanvas;
 
@@ -12,6 +13,8 @@ var width, height;
 //var toggle=false;
 function step(){
 	if(cam.isReady()){
+		sgClient.handleInput();
+		
 		var timea = performance.now();
 		var curdata = cam.getImageData();
 		if(curdata != null) {
@@ -120,7 +123,9 @@ function step(){
 						draw3dline(x,y);
 					};
 				};*/
+				
 				renderer.updateWindowsillMasks(transform,curdata);
+				sgClient.drawInRenderer(renderer);
 				renderer.draw(transform);
 			}else{
 				if(computingTransform){
@@ -163,11 +168,12 @@ window.addEventListener('load',function(){
 	ransacCalc = new RansacCalculator();
 	flowTracker = new FlowTracker(width,height,ransacCalc);
 	renderer = new GameRenderer();
+	delayCanvas = document.getElementById('delayCanvas');
+	sgClient = new SnakeGameClient(document.body);
 	cam.start().then(function(){
 		imgHistory = new ImageHistory();
 
 
-		delayCanvas = document.getElementById('delayCanvas');
 		if(!('ontouchstart' in window)){
 			trainCanvas = document.createElement('canvas');
 			renderer.setup(trainCanvas, delayCanvas, width, height);
@@ -188,6 +194,7 @@ window.addEventListener('load',function(){
 				transformIsNew=true;
 				if(data.success){
 					transform = data.matrix;
+					if(!sgClient.started) sgClient.start();
 					//console.log('Got matrix ',data.matrix);
 				}else{
 					//console.log('Could not find matrix!');

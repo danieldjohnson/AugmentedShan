@@ -51,8 +51,8 @@ WindowFinder.findCorners = function(imageData,lastTransform){
 		var found = WindowFinder.findWindowCorner(imageData,lastTransform,curPos[0],curPos[1],curPos[2]);
 		if(found){
 			from.push({
-				x:curPos[0].x,
-				y:curPos[0].y,
+				x:curPos[0].x + curPos[1]*0.15,
+				y:curPos[0].y + curPos[2]*0.15,
 			});
 			to.push(found);
 

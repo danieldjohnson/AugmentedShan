@@ -102,6 +102,51 @@ function GameRenderer(){
 		{  x:48, y:7, z:-7, source:49, side:FLOATING}		
 	];
 
+	var boxes = [];
+	var numBoxes = 0;
+	function addBox(x,y,color){
+		var mcolor=new THREE.Color(color);
+		if(numBoxes < boxes.length){
+			boxes[numBoxes].material.color=mcolor;
+			boxes[numBoxes].material.ambient=mcolor;
+			boxes[numBoxes].position.set(x+0.5, y+0.5, -0.5);
+			objectScene.add(boxes[numBoxes]);
+			numBoxes++;
+		}else{
+			var geometry = new THREE.BoxGeometry( 1, 1, 1 );
+			var material = new THREE.MeshLambertMaterial( { color: mcolor, ambient:mcolor, shading: THREE.FlatShading,} );
+			var cube = new THREE.Mesh( geometry, material );
+			cube.position.set(x+0.5, y+0.5, -0.5);
+			objectScene.add(cube);
+			boxes[boxes.length]=cube;
+			numBoxes++;
+		}
+		
+	}
+	function removeBoxes(){
+		for (var i = 0; i < numBoxes; i++) {
+			objectScene.remove(boxes[i]);
+		};
+		numBoxes=0
+	}
+
+	var food;
+	function moveFood(x,y){
+		food.position.set(x+0.5, y+0.5, -0.5);
+		objectScene.add(food);
+	}
+	function hideFood(){
+		objectScene.remove(food);
+	}
+
+	var playerMarker;
+	function movePlayerMarker(x,y){
+		playerMarker.position.set(x+0.5, y+0.5, -0.5);
+		objectScene.add(playerMarker);
+	}
+	function hidePlayerMarker(){
+		objectScene.remove(playerMarker);
+	}
 
 	gameRenderer = {
 		setup: function setup(sourceCanvas,renderCanvas,pwidth,pheight){
@@ -132,11 +177,17 @@ function GameRenderer(){
 			objectCamera = new ExtrapolatedHomographyCamera(pixelwidth,pixelheight);
 			objectScene.add(objectCamera);
 
-			var gridObject = new THREE.Mesh(
-				new THREE.BoxGeometry(52,34,0),
-				new THREE.MeshBasicMaterial({color:'#00FF00'})
+			var geometry = new THREE.Geometry();
+		    geometry.vertices.push(new THREE.Vector3(0, 0, 0));
+		    geometry.vertices.push(new THREE.Vector3(52, 0, 0));
+		    geometry.vertices.push(new THREE.Vector3(52, 34, 0));
+		    geometry.vertices.push(new THREE.Vector3(0, 34, 0));
+		    geometry.vertices.push(new THREE.Vector3(0, 0, 0));
+			var gridObject = new THREE.Line(
+				geometry,
+				new THREE.LineBasicMaterial({color:'#00FFFF', linewidth:3})
 			);
-			gridObject.position.set(26,17,0);
+			//gridObject.position.set(26,17,-0.5);
 			//gridObject.material.transparent = true;
 			//gridObject.material.blending = THREE.MultiplyBlending;
 			objectScene.add(gridObject);
@@ -157,17 +208,37 @@ function GameRenderer(){
 				var material = windowsillMaterial.clone();
 				material.uniforms = w.uniforms;
 				var windowSillObject = new THREE.Mesh(
-					new THREE.BoxGeometry(5,8,4),
+					new THREE.BoxGeometry(5,4,4),
 					material
 				);
-				windowSillObject.position.set(w.x+2.5,w.y+4,(w.z||0)-2);
+				windowSillObject.position.set(w.x+2.5,w.y+2,(w.z||0)-2);
 				//windowSillObject.material.transparent = true;
 				//windowSillObject.material.blending = THREE.MultiplyBlending;
 				objectScene.add(windowSillObject);
 			};
 
-			renderer = new THREE.WebGLRenderer({canvas:renderCanvas});
+			var geometry = new THREE.BoxGeometry( 0.5, 0.5, 0.5 );
+			var material = new THREE.MeshLambertMaterial( { color: 'white', ambient:'white', emissive:'#555555', shading: THREE.FlatShading,} );
+			food = new THREE.Mesh( geometry, material );
+			
+			var geometry = new THREE.BoxGeometry( 1.3, 1.3, 1.2 );
+			var material = new THREE.MeshLambertMaterial( { color: 'white', ambient:'white', emissive:'#555555', shading: THREE.FlatShading,} );
+			material.transparent = true;
+			material.opacity=0.5;
+			playerMarker = new THREE.Mesh( geometry, material );
+
+			// add subtle blue ambient lighting
+			var ambientLight = new THREE.AmbientLight(0x888888);
+			objectScene.add(ambientLight);
+
+			// directional lighting
+			var directionalLight = new THREE.DirectionalLight(0xffffff);
+			directionalLight.position.set(-0.7, -1.4, -1).normalize();
+			objectScene.add(directionalLight);
+
+			renderer = new THREE.WebGLRenderer({canvas:renderCanvas, antialias: true });
 			renderer.setSize( window.innerWidth, window.innerHeight );
+
 		},
 		addTransientSquare: putTransient,
 		clearTransientSquares: clearTransients,
@@ -181,7 +252,6 @@ function GameRenderer(){
 				renderer.render(objectScene, objectCamera);
 			}
 		},
-
 		updateWindowsillMasks: function(matrix, imageData){
 			//console.group('Updating windowsill cutoffs');
 			for (var i = 0; i < windowblocks.length; i++) {
@@ -216,7 +286,14 @@ function GameRenderer(){
 				//console.log(cutoff,w.uniforms.cutoff.value);
 			};
 			//console.groupEnd();
-		}
+		},
+
+		addBox:addBox,
+		removeBoxes:removeBoxes,
+		moveFood:moveFood,
+		hideFood:hideFood,
+		movePlayerMarker:movePlayerMarker,
+		hidePlayerMarker:hidePlayerMarker,
 
 	}
 	return gameRenderer;
