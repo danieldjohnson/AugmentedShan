@@ -10,6 +10,7 @@
 		<script src="dat.gui.min.js"></script>
 		<script src="three.min.js"></script>
 		<script src="multiline.js"></script>
+		<script src="virtualjoystick.js"></script>
 
 		<script>
 			//<script src="//localhost:3000/socket.io/socket.io.js">< /script>
@@ -37,6 +38,57 @@
 						socket.emit('move','down');
 					}
 				});
+				var joystick = new VirtualJoystick({
+					container: document.body,
+					limitStickTravel: true,
+					stickRadius: 50,
+					mouseSupport:true
+				});
+				var lastDir = null;
+				window.setInterval(function(){
+					var THRESH = 10;
+					var dx = joystick.deltaX(),
+						dy = joystick.deltaY(),
+						mdx = Math.abs(dx),
+						mdy = Math.abs(dy);
+					if(mdx > mdy){
+						if(mdx>THRESH){
+							if(dx>0){
+								if(lastDir!='right'){
+									socket.emit('move','right');
+									lastDir = 'right';
+									console.log('INPUT: ',lastDir);
+								}
+							}else{
+								if(lastDir!='left'){
+									socket.emit('move','left');
+									lastDir = 'left';
+									console.log('INPUT: ',lastDir);
+								}
+							}
+						}else{
+							lastDir = null;
+						}
+					}else{
+						if(mdy>THRESH){
+							if(dy>0){
+								if(lastDir!='down'){
+									socket.emit('move','down');
+									lastDir = 'down';
+									console.log('INPUT: ',lastDir);
+								}
+							}else{
+								if(lastDir!='up'){
+									socket.emit('move','up');
+									lastDir = 'up';
+									console.log('INPUT: ',lastDir);
+								}
+							}
+						}else{
+							lastDir = null;
+						}
+					}
+				},1000/60);
 
 				socket.on('connect',function(){
 					socket.emit('join');

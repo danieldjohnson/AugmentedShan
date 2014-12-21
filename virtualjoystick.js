@@ -1,3 +1,4 @@
+//Edited by Daniel Johnson to chase base
 var VirtualJoystick	= function(opts)
 {
 	opts			= opts			|| {};
@@ -10,6 +11,7 @@ var VirtualJoystick	= function(opts)
 	this._baseX		= this._stickX = opts.baseX || 0
 	this._baseY		= this._stickY = opts.baseY || 0
 	this._limitStickTravel	= opts.limitStickTravel || false
+	this._dragBase	= opts.dragBase || false
 	this._stickRadius	= opts.stickRadius !== undefined ? opts.stickRadius : 100
 	this._useCssTransform	= opts.useCssTransform !== undefined ? opts.useCssTransform : false
 
@@ -202,8 +204,14 @@ VirtualJoystick.prototype._onMove	= function(x, y)
 				var stickNormalizedX = deltaX / stickDistance;
 				var stickNormalizedY = deltaY / stickDistance;
 			
-				this._stickX = stickNormalizedX * this._stickRadius + this._baseX;
-				this._stickY = stickNormalizedY * this._stickRadius + this._baseY;
+				if(this._dragBase === true){
+					this._baseX	= this._stickX - stickNormalizedX * this._stickRadius;
+					this._baseY	= this._stickY - stickNormalizedY * this._stickRadius;
+					this._move(this._baseEl.style, (this._baseX - this._baseEl.width /2), (this._baseY - this._baseEl.height/2));
+				}else{
+					this._stickX = stickNormalizedX * this._stickRadius + this._baseX;
+					this._stickY = stickNormalizedY * this._stickRadius + this._baseY;
+				}
 			} 		
 		}
 		

@@ -71,9 +71,11 @@ function GameRenderer(){
 		var tx = 2*x/pixelwidth -1;
 		var ty = 2*y/pixelheight -1;
 
+		var mindim = Math.min(pixelwidth,pixelheight);
+
 		if(numTransients >= transients.length){
 			var t = new THREE.Mesh(
-			  new THREE.PlaneBufferGeometry(0.005, 0.005, 0,0),
+			  new THREE.PlaneBufferGeometry(0.01*pixelheight/mindim, 0.01*pixelwidth/mindim, 0,0),
 			  new THREE.MeshBasicMaterial({color:'#00FF00'})
 			);
 			transients[numTransients] = t;

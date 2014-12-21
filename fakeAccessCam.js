@@ -1,7 +1,5 @@
-function Webcam(width, height){
-	if(this.stream) return new Promise(function(resolve){
-		resolve();
-	}); //already set up. resolve
+function FakeWebcam(width, height){
+	var self=this;
 	console.log(width,height);
 	var a = width*height;
 	var desiredA = 360*640;
@@ -12,33 +10,45 @@ function Webcam(width, height){
 	height = Math.floor(height);
 	console.log("Scaling", a, desiredA, factor, width, height);
 
-	this.video = document.createElement('video'); //document.getElementById('streamVideo');
-	this.video.autoplay = true;
-	this.video.width = width;
-	this.video.height = height;
+	this.width = width;
+	this.height = height;
+
+	//this.img = document.getElementById('testImg');
+	this.img = new Image();//document.createElement('image');
+	this.imgLoaded=false;
+	this.img.addEventListener('load',function(){
+		self.imgLoaded=true;
+	});
+	this.img.src = "shan.jpg";
+
+			
+
 	this.canvas = document.createElement('canvas'); //document.getElementById('processCanvas');
 	this.canvas.width = width;
 	this.canvas.height = height;
 	this.ctx = this.canvas.getContext('2d');
 }
-Webcam.prototype.start = function(){
+FakeWebcam.prototype.start = function(){
 	var self=this;
 	return new Promise(function(resolve, reject){
-		self.video.src =  "test.mp4"
-		self.video.loop = true;
-		self.stream = true;
-		self.video.addEventListener('loadeddata',function(){
+		if(self.imgLoaded){
 			window.setTimeout(resolve,500);
-		});
+		}else{
+			self.img.addEventListener('load',function(){
+				window.setTimeout(resolve,500);
+			});
+		}
 	});
 }
-Webcam.prototype.isReady = function(){
-	return this.stream && this.video.readyState == this.video.HAVE_ENOUGH_DATA;
+FakeWebcam.prototype.isReady = function(){
+	return this.imgLoaded;
 }
-Webcam.prototype.getImageData = function(){
-	if(this.stream){
-		this.ctx.drawImage(this.video, 0, 0,this.canvas.width, this.canvas.height);
+FakeWebcam.prototype.getImageData = function(){
+	if(this.imgLoaded){
+		//trainCtx.drawImage(trainImg,0,0,width,trainImg.height/trainImg.width*width);
+
+		this.ctx.drawImage(this.img, 0, 0,this.canvas.width, this.canvas.height);
 		return this.ctx.getImageData(0,0,this.canvas.width, this.canvas.height);
-	}
+	}else return null;
 }
 
