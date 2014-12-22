@@ -1,33 +1,40 @@
+var socketAddr = location.host.split(':')[0] + ':3000';
+var socketScript = document.createElement('script')
+socketScript.setAttribute("type","text/javascript")
+socketScript.setAttribute("src", '//'+socketAddr+'/socket.io/socket.io.js');
+document.getElementsByTagName('head')[0].appendChild(socketScript);
+
 function SnakeGameClient(uiElement){
 	var self=this;
-	this.worker = new Worker('socketWorker.js');
+	this.socket = io(socketAddr+'/snake');
 	this.toggleFlash = false;
 	this.toggleTime = Date.now();
 	this.started=false;
 	this.id=null;
 
+
 	this.lastStateTime = performance.now();
 	this.stateInterval = 500;
 	this.stateIsNew = false;
 
-	this.worker.addEventListener('message', function(e) {
-		var msg = e.data;
-		if(msg.action=='connect'){
-			self.connected = true;
-			if(self.started)
-				self.worker.postMessage({action:'join'});
-		}else if(msg.action=='disconnect'){
-			self.connected = false;
-		}else if(msg.action=='configure'){
-			console.log('Assgned id ',msg.data.id);
-			self.id = msg.data.id;
-		}else if(msg.action=='update'){
-			self.stateIsNew = true;
-			self.lastStateTime = performance.now();
-
-			self.state = msg.data;
-			console.log(msg.data);
-		}
+	this.socket.on('connect',function(){
+		self.connected = true;
+		if(self.started)
+			self.socket.emit('join');
+	});
+	this.socket.on('disconnect',function(){
+		self.connected = false;
+	});
+	this.socket.on('configure',function(info){
+		console.log('Assgned id ',info.id);
+		self.id = info.id;
+	});
+	this.socket.on('update',function(state){
+		self.stateIsNew = true;
+		self.lastStateTime = performance.now();
+			
+		self.state = state;
+		console.log(state);
 	});
 
 
@@ -40,15 +47,16 @@ function SnakeGameClient(uiElement){
 	});
 
 	window.addEventListener('keydown',function(e){
+		if(!self.started || !self.connected) return;
 		var event = window.event ? window.event : e;
 		if(event.keyCode == 37){
-			self.worker.postMessage({action:'move',data:'left'});
+			self.socket.emit('move','left');
 		}else if(event.keyCode == 38){
-			self.worker.postMessage({action:'move',data:'up'});
+			self.socket.emit('move','up');
 		}else if(event.keyCode == 39){
-			self.worker.postMessage({action:'move',data:'right'});
+			self.socket.emit('move','right');
 		}else if(event.keyCode == 40){
-			self.worker.postMessage({action:'move',data:'down'});
+			self.socket.emit('move','down');
 		}else{
 			return;
 		}
@@ -60,10 +68,10 @@ SnakeGameClient.prototype.start = function(){
 	if(this.started) return;
 
 	this.started=true;
-	this.worker.postMessage({action:'join'});
+	this.socket.emit('join');
 }
 SnakeGameClient.prototype.handleInput = function(){
-	if(!this.started) return;
+	if(!this.started || !this.connected) return;
 
 	var THRESH = 10;
 	var dx = this.joystick.deltaX(),
@@ -74,13 +82,13 @@ SnakeGameClient.prototype.handleInput = function(){
 		if(mdx>THRESH){
 			if(dx>0){
 				if(this.lastDir!='right'){
-					this.worker.postMessage({action:'move',data:'right'});
+					this.socket.emit('move','right');
 					this.lastDir = 'right';
 					console.log('INPUT: ',this.lastDir);
 				}
 			}else{
 				if(this.lastDir!='left'){
-					this.worker.postMessage({action:'move',data:'left'});
+					this.socket.emit('move','left');
 					this.lastDir = 'left';
 					console.log('INPUT: ',this.lastDir);
 				}
@@ -92,13 +100,13 @@ SnakeGameClient.prototype.handleInput = function(){
 		if(mdy>THRESH){
 			if(dy>0){
 				if(this.lastDir!='down'){
-					this.worker.postMessage({action:'move',data:'down'});
+					this.socket.emit('move','down');
 					this.lastDir = 'down';
 					console.log('INPUT: ',this.lastDir);
 				}
 			}else{
 				if(this.lastDir!='up'){
-					this.worker.postMessage({action:'move',data:'up'});
+					this.socket.emit('move','up');
 					this.lastDir = 'up';
 					console.log('INPUT: ',this.lastDir);
 				}

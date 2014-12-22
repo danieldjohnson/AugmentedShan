@@ -15,42 +15,38 @@ ExtrapolatedHomographyCamera.prototype.fromHomography = function fromMatrix(homo
 	this.projectionMatrix.multiplyMatrices(this.orthographicProjection,this.projectionMatrix);
 }
 
-var vertexShader = multiline(function(){/*
-	varying vec2 vUv;
-	varying vec2 screenpos;
+var vertexShader = [
+'	varying vec2 vUv;',
+'	varying vec2 screenpos;',
+'	void main()',
+'	{',
+'		vUv = uv;',
+'		vec4 mvPosition = modelViewMatrix * vec4( position, 1.0 );',
+'		gl_Position = projectionMatrix * mvPosition;',
+'		vec3 ndc = gl_Position.xyz / gl_Position.w; //perspective divide/normalize',
+'		vec2 viewportCoord = ndc.xy * 0.5 + 0.5; //ndc is -1 to 1 in GL. scale for 0 to 1',
+'		screenpos = viewportCoord;',
+'	}',
+].join('\n');
 
-	void main()
-	{
-		vUv = uv;
-		vec4 mvPosition = modelViewMatrix * vec4( position, 1.0 );
-		gl_Position = projectionMatrix * mvPosition;
-
-		vec3 ndc = gl_Position.xyz / gl_Position.w; //perspective divide/normalize
-		vec2 viewportCoord = ndc.xy * 0.5 + 0.5; //ndc is -1 to 1 in GL. scale for 0 to 1
-
-		screenpos = viewportCoord;
-	}
-*/});
-var windowMaskShader = multiline(function(){/*
-	uniform vec2 resolution;
-	uniform sampler2D background;
-	uniform float cutoff;
-
-	varying vec2 vUv;
-	varying vec2 screenpos;
-
-	void main( void ) {
-		vec2 position = vUv;
-		vec3 backColor = texture2D( background, screenpos ).rgb;
-		float intensity = backColor.r + backColor.g + backColor.b;
-		if(intensity<cutoff){
-			gl_FragColor = vec4(backColor,1.0);
-		}else{
-			gl_FragColor = vec4(0.0,0.0,0.0,0.0);
-			//gl_FragColor = vec4(0.0,1.0,0.0,1.0);
-		}
-	}
-*/});
+var windowMaskShader = [
+'	uniform vec2 resolution;',
+'	uniform sampler2D background;',
+'	uniform float cutoff;',
+'	varying vec2 vUv;',
+'	varying vec2 screenpos;',
+'	void main( void ) {',
+'		vec2 position = vUv;',
+'		vec3 backColor = texture2D( background, screenpos ).rgb;',
+'		float intensity = backColor.r + backColor.g + backColor.b;',
+'		if(intensity<cutoff){',
+'			gl_FragColor = vec4(backColor,1.0);',
+'		}else{',
+'			gl_FragColor = vec4(0.0,0.0,0.0,0.0);',
+'			//gl_FragColor = vec4(0.0,1.0,0.0,1.0);',
+'		}',
+'	}',
+].join('\n');
 
 
 function GameRenderer(){
@@ -80,7 +76,7 @@ function GameRenderer(){
 			);
 			transients[numTransients] = t;
 		}
-		transients[numTransients].position.set(-tx,-ty,0);
+		transients[numTransients].position.set(-tx-0.005*pixelheight/mindim,-ty-0.005*pixelwidth/mindim,0);
 		backgroundScene.add(transients[numTransients]);
 		numTransients++;
 	}
@@ -239,13 +235,16 @@ function GameRenderer(){
 			objectScene.add(directionalLight);
 
 			renderer = new THREE.WebGLRenderer({canvas:renderCanvas, antialias: true });
-			renderer.setSize( window.innerWidth, window.innerHeight );
+			renderer.setSize( screen.width, screen.height );
 
 		},
 		addTransientSquare: putTransient,
 		clearTransientSquares: clearTransients,
-		draw: function draw(matrix){
+		loadBackgroundTexture: function(){
 			backgroundTexture.needsUpdate = true;
+			renderer.uploadTexture(backgroundTexture);
+		},
+		draw: function(matrix){
 			renderer.autoClear = false;
 			renderer.clear();
 			renderer.render(backgroundScene, backgroundCamera);

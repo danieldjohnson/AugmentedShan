@@ -1,5 +1,24 @@
+var requestFullscreen = function (ele) {
+    if (ele.requestFullscreen) {
+        ele.requestFullscreen();
+    } else if (ele.webkitRequestFullscreen) {
+        ele.webkitRequestFullscreen();
+    } else if (ele.mozRequestFullScreen) {
+        ele.mozRequestFullScreen();
+    } else if (ele.msRequestFullscreen) {
+        ele.msRequestFullscreen();
+    } else {
+        // Fallback
+        console.log('Fullscreen API is not supported.');
+    }
+};
+
+
 var cam, squareMatcher, flowTracker,ransacCalc;
 var delayCanvas;
+var topHelp, bottomHelp;
+var helpActive = true;
+var fullscreenElement;
 var renderer;
 var sgClient;
 
@@ -16,6 +35,16 @@ function doAfterUIProcessing(fn){
 		sgClient.handleInput();
 		fn();
 	});
+}
+
+function onFirstTap(fn){
+	function doAction(){
+		fn();
+		document.body.removeEventListener('mousedown',doAction,false);
+		document.body.removeEventListener('touchstart',doAction,false);
+	}
+	document.body.addEventListener('mousedown',doAction,false);
+	document.body.addEventListener('touchstart',doAction,false);
 }
 
 var lastRedrawIntervals = [];
@@ -38,6 +67,21 @@ function step(){
 	sgClient.stateIsNew=false;
 
 	if(transform&&!transformIsNew){
+		if(helpActive){
+			helpActive=false;
+			topHelp.innerHTML = 'Your snake is the blinking cube.<br>Collect the white dots to grow longer!';
+			if('ontouchstart' in window){
+				bottomHelp.innerHTML = 'Slide your finger on the screen to turn your snake!';
+			}else{
+				bottomHelp.innerHTML = 'Use arrow keys to turn your snake!';
+			}
+			onFirstTap(function(){
+				setTimeout(function(){
+					topHelp.innerHTML = '';
+					bottomHelp.innerHTML = '';
+				},5000);
+			});
+		}
 		sgClient.drawInRenderer(renderer);
 		renderer.draw(transform);
 	}else{
@@ -87,6 +131,7 @@ function step(){
 		}
 	}
 	function partThree(){ // When we have a transform
+		renderer.loadBackgroundTexture();
 		if(transform){
 			renderer.updateWindowsillMasks(transform,curdata);
 
@@ -131,6 +176,15 @@ function step(){
 }
 
 window.addEventListener('load',function(){
+	fullscreenElement = document.getElementById('fullscreenContainer');
+	topHelp = document.getElementById('topText');
+	bottomHelp = document.getElementById('bottomText');
+
+	onFirstTap(function(){
+		requestFullscreen(fullscreenElement);
+	});
+	
+
 	cam = new Webcam(640,480);
 	width = cam.width;
 	height = cam.height;
@@ -138,22 +192,36 @@ window.addEventListener('load',function(){
 	flowTracker = new FlowTracker(width,height,ransacCalc);
 	renderer = new GameRenderer();
 	delayCanvas = document.getElementById('delayCanvas');
-	sgClient = new SnakeGameClient(document.body);
-	cam.start().then(function(){
+	try{
+		sgClient = new SnakeGameClient(fullscreenElement);
+	}catch(e){
+		console.error(e);
+		topHelp.innerHTML = 'Could not connect to server!';
+		bottomHelp.innerHTML = '';
+		return;
+	}
+
+	topHelp.innerHTML = 'To enable augmented reality, please allow camera access.';
+	bottomHelp.innerHTML = 'To enable augmented reality, please allow camera access.';
+
+	cam.start()
+		.catch(function(){
+			cam = new FakeWebcam(640,480);
+			return cam.start();
+		})
+		.then(setupAfterCameraStart);
+
+	function setupAfterCameraStart(){
+		if(cam instanceof Webcam){
+			topHelp.innerHTML = 'Please point the camera at the wall of the Shanahan building.';
+			bottomHelp.innerHTML = 'Attempting to detect wall.';
+		}else{
+			topHelp.innerHTML = '';
+			bottomHelp.innerHTML = 'asdfasdf';
+		}
 		imgHistory = new ImageHistory();
 
-
-		/*if(true || !('ontouchstart' in window)){
-			trainCanvas = document.createElement('canvas');
-			renderer.setup(trainCanvas, delayCanvas, width, height);
-		}else{
-			renderer.setup(cam.canvas, delayCanvas, width, height);
-		}*/
 		renderer.setup(cam.canvas, delayCanvas, width, height);
-		
-		//delayCanvas.width = width;
-		//delayCanvas.height = height;
-		//ctx = delayCanvas.getContext('2d');
 
 		squareMatcher = new Worker('squareMatchWorker.js');
 		squareMatcher.addEventListener('message',function(e){
@@ -164,7 +232,10 @@ window.addEventListener('load',function(){
 				transformIsNew=true;
 				if(data.success){
 					transform = data.matrix;
-					if(!sgClient.started) sgClient.start();
+					if(!sgClient.started){
+						sgClient.start();
+						
+					} 
 					//console.log('Got matrix ',data.matrix);
 				}else{
 					//console.log('Could not find matrix!');
@@ -172,7 +243,7 @@ window.addEventListener('load',function(){
 			}
 		});
 		step();
-	});
+	}
 	//var gui = new dat.GUI();
 	//gui.add(CameraMatrixUtil,'f').min(0).max(1000);
 })

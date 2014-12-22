@@ -1,15 +1,13 @@
 <!doctype html>
 <html>
 	<head>
-		
+		<meta name="viewport" content="width=device-width, initial-scale=1">
 		<script src="promise-6.0.0.min.js"></script>
 		<script src="jsfeat/build/jsfeat.js"></script>
 		<script src="numeric-1.2.6.min.js"></script>
 		<script src="sylvester.js"></script>
 		<script src="math.min.js"></script>
-		<script src="dat.gui.min.js"></script>
 		<script src="three.min.js"></script>
-		<script src="multiline.js"></script>
 		<script src="virtualjoystick.js"></script>
 		<script src="setZeroTimeout.js"></script>
 
@@ -28,13 +26,49 @@
 		<script src="extrapolate3d.js"></script>
 		<script src="cameraMatrixUtil.js"></script>
 		<script src="renderer.js"></script>
-		<script src="snakeGameClientNonthreaded.js"></script>
+		<script src="snakeGameClient.js"></script>
 		<script src="main.js"></script>
+		<style>
+			body, html{
+				margin:0;
+				padding:0;
+			}
+
+			#topText,#bottomText{
+				position:absolute;
+				left:0;
+				right:0;
+				padding:10px auto;
+				text-align:center;
+				color:white;
+				font-size:30px;
+				text-shadow:
+				   -1px -1px 0 #000,  
+				    0px -1px 0 #000, 
+				    1px -1px 0 #000,
+				   -1px  0px 0 #000,  
+				    0px  0px 0 #000, 
+				    1px  0px 0 #000,
+				    -1px 1px 0 #000,
+				     0px 1px 0 #000,
+				     1px 1px 0 #000;
+			}
+			#topText{
+				top:0;
+			}
+			#bottomText{
+				bottom:0;
+			}
+		</style>
 	</head>
 	<body>
 		<!--<video id="streamVideo" autoplay ></video>
 		<canvas id="processCanvas" ></canvas>-->
-		<canvas id="delayCanvas" width="640" height="360"></canvas>
+		<div id="fullscreenContainer">
+			<div id="topText">Loading...</div>
+			<canvas id="delayCanvas" width="640" height="360"></canvas>
+			<div id="bottomText">Please wait...</div>
+		</div>
 		<img id="testImg" style="display:none" src="shan.jpg">
 	</body>
 </html>
