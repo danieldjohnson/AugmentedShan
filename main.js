@@ -217,7 +217,7 @@ window.addEventListener('load',function(){
 			bottomHelp.innerHTML = 'Attempting to detect wall.';
 		}else{
 			topHelp.innerHTML = '';
-			bottomHelp.innerHTML = 'asdfasdf';
+			bottomHelp.innerHTML = '';
 		}
 		imgHistory = new ImageHistory();
 

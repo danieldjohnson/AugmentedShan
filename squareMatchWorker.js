@@ -1,5 +1,5 @@
 self.window = self;
-importScripts('jsfeat/build/jsfeat.js'); 
+importScripts('jsfeat-min.js'); 
 importScripts('ransac.js'); 
 importScripts('squareFeatures.js'); 
 importScripts('squareDetect.js'); 
